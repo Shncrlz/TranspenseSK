@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transpense - SK Financial Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        window.addEventListener('pageshow', function (event) {
+            if (event.persisted || !localStorage.getItem('user')) {
+                window.location.replace('login.html');
+            }
+        });
+
+        if (!localStorage.getItem('user')) {
+            window.location.replace('login.html');
+        }
+    </script>
+</head>
+<body>
+    <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <div class="app-layout">
+        <aside id="appSidebar" class="sidebar">
+            <div class="logo">
+                <img src="SK_logo.jpg" alt="SK Logo" class="sidebar-logo-img">
+                <div class="logo-text-group">
+                    <span>Transpense</span>
+                    <span class="logo-sub">SK Financial System</span>
+                </div>
+            </div>
+
+            <nav class="nav-links">
+                <a href="#" id="nav-overview" class="active" onclick="showTab('overview')">Overview</a>
+                <a href="#" id="nav-budget" onclick="showTab('budget')">Budget Allocations</a>
+                <a href="#" id="nav-expenses" onclick="showTab('expenses')" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Expenses & Approvals</span>
+                    <span id="sidebarExpenseBadge" style="background: #dc2626; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; font-weight: bold; display: none;">0</span>
+                </a>
+                <a href="#" id="nav-ledger" onclick="showTab('ledger')">Financial Ledger</a>
+                <a href="#" id="nav-reports" onclick="showTab('reports')">Audit & Reports</a>
+                <a href="#" id="nav-admin-users" class="admin-only" style="display: none;" onclick="showTab('admin-users')">Manage Officials</a>
+            </nav>
+        </aside>
+
+        <main id="mainContentArea" class="main-content">
+            <div class="system-header-card">
+                <div class="system-header-info">
+                    <button id="menuToggleBtn" onclick="toggleSidebar()" aria-label="Toggle Menu" title="Toggle Menu">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                    </button>
+                    <div>
+                        <h2>Online Automated Revenue and Budget Management System</h2>
+                        <p>Sangguniang Kabataan at Tonsuya, Malabon City</p>
+                    </div>
+                </div>
+
+                <div class="user-dropdown-container">
+                    <div class="user-profile-pill" id="userProfileTrigger" onclick="toggleUserDropdown()">
+                        <div class="avatar-circle" id="userAvatarContainer">
+                            <span id="userAvatarInitial">U</span>
+                        </div>
+                        <div class="profile-info-group">
+                            <span class="profile-name" id="userNameDisplay">Loading...</span>
+                            <span class="profile-role" id="userRoleBadge">Role</span>
+                        </div>
+                        <span class="dropdown-arrow">▼</span>
+                    </div>
+
+                    <div class="dropdown-menu" id="userDropdownMenu">
+                        <div style="padding: 10px 12px; border-bottom: 1px solid #f3f4f6; background: #f9fafb;">
+                            <p style="font-size: 0.7rem; color: #6b7280; margin: 0;">Signed in as</p>
+                            <p id="dropdownEmailOrRole" style="font-size: 0.8rem; font-weight: 600; color: #111827; margin: 2px 0 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></p>
+                        </div>
+                        <div style="padding: 4px 0;">
+                            <a href="#" onclick="showTab('settings'); return false;">Settings</a>
+                            <a href="#" onclick="logout(); return false;" style="color: #dc2626; border-top: 1px solid #f3f4f6;">Log out</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <section id="overview-section" class="view-section active-view">
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <p class="stat-label">Total Revenue</p>
+                        <p id="ovTotalRevenue" class="stat-value green">₱0.00</p>
+                    </div>
+                    <div class="stat-card">
+                        <p class="stat-label">Total Expenses</p>
+                        <p id="ovTotalExpenses" class="stat-value red">₱0.00</p>
+                    </div>
+                    <div class="stat-card">
+                        <p class="stat-label">Remaining Balance</p>
+                        <p id="ovRemaining" class="stat-value green">₱0.00</p>
+                    </div>
+                    <div class="stat-card">
+                        <p class="stat-label">Pending Approvals</p>
+                        <div style="display: flex; align-items: baseline; gap: 8px;">
+                            <p id="ovPendingCount" class="stat-value default">0</p>
+                            <span class="badge-pending-pill">Pending</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Revenue vs Expenses (Last 6 Months)</h3>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="revenueExpenseChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Budget Utilization by Category</h3>
+                        </div>
+                        <div id="budgetProgressWidget" style="display: flex; flex-direction: column; gap: 16px; margin-top: 10px;"></div>
+                    </div>
+                </div>
+
+                <div class="widget-card">
+                    <div class="widget-header">
+                        <h3 class="widget-title">Recent Transactions</h3>
+                        <div>
+                            <button onclick="openBudgetModal()" class="btn-primary" style="padding: 6px 12px; font-size: 0.8rem;">+ Add Budget</button>
+                            <button onclick="openExpenseModal()" class="btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">+ Submit Expense</button>
+                        </div>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="data-table" style="border: none; box-shadow: none;">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentTransactionsTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="budget-section" class="view-section">
+                <header class="section-header">
+                    <h2>Budget Allocations</h2>
+                    <button onclick="openBudgetModal()" class="btn-primary">+ Add Budget Item</button>
+                </header>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Fiscal Year</th>
+                            <th style="text-align: right;">Allocated Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="budgetTableBody"></tbody>
+                    <tfoot>
+                        <tr style="background-color: #f8fafc; font-weight: 700; border-top: 2px solid #e2e8f0;">
+                            <td colspan="2" style="text-align: right; color: #475569; text-transform: uppercase; font-size: 0.85rem;">Total Budget:</td>
+                            <td id="budgetTableTotal" style="text-align: right; color: #0d9488; font-size: 1.05rem;">₱0.00</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </section>
+
+            <section id="expenses-section" class="view-section">
+                <header class="section-header">
+                    <h2>Expense Disbursals & Approvals</h2>
+                    <button onclick="openExpenseModal()" class="btn-secondary">+ Submit Expense</button>
+                </header>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Category</th>
+                            <th>Payee</th>
+                            <th>Description</th>
+                            <th>Requestor</th>
+                            <th>Approver</th>
+                            <th>Receipt</th>
+                            <th>Status</th>
+                            <th style="text-align: right;">Amount</th>
+                            <th class="admin-only" style="display: none; text-align: center;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="expenseTableBody"></tbody>
+                    <tfoot>
+                        <tr style="background-color: #f8fafc; font-weight: 700; border-top: 2px solid #e2e8f0;">
+                            <td colspan="8" style="text-align: right; color: #475569; text-transform: uppercase; font-size: 0.85rem;">Total Approved Expenses:</td>
+                            <td colspan="2" id="expenseTableTotal" style="text-align: right; color: #dc2626; font-size: 1.05rem;">₱0.00</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </section>
+
+            <section id="ledger-section" class="view-section">
+                <header class="section-header">
+                    <h2>Unified Financial Ledger</h2>
+                </header>
+                <div class="summary-cards" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;">
+                    <div class="stat-card"><h4>Total Budget</h4><p id="cardTotalBudget" class="stat-value green">₱0.00</p></div>
+                    <div class="stat-card"><h4>Total Disbursed</h4><p id="cardTotalDisbursed" class="stat-value red">₱0.00</p></div>
+                    <div class="stat-card"><h4>Net Balance</h4><p id="cardRemaining" class="stat-value green">₱0.00</p></div>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Category</th>
+                            <th>Details</th>
+                            <th style="text-align: right;">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ledgerTableBody"></tbody>
+                </table>
+            </section>
+
+            <section id="reports-section" class="view-section">
+                <header class="section-header">
+                    <h2>Audit & Financial Reports</h2>
+                    <div>
+                        <button onclick="exportReportPDF()" class="btn-primary" style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: 0.85rem;">
+                            📄 Export to PDF / Print
+                        </button>
+                    </div>
+                </header>
+
+                <div class="report-box" id="printableReportArea">
+                    <div class="report-header">
+                        <h2>Audit & Financial Report</h2>
+                        <h4>Transpense SK Financial System</h4>
+                        <p><strong>Print Date:</strong> <span id="reportPrintDate"></span> | <strong>Generated By:</strong> <span id="reportGeneratedBy"></span></p>
+                    </div>
+                    
+                    <div class="report-summary-grid">
+                        <div>
+                            <div style="color: #64748b; font-size: 0.8rem;">Total Budget</div>
+                            <div class="report-summary-val" id="repTotalBudget">₱0.00</div>
+                        </div>
+                        <div>
+                            <div style="color: #64748b; font-size: 0.8rem;">Total Disbursed</div>
+                            <div class="report-summary-val" id="repTotalDisbursed" style="color: #dc2626;">₱0.00</div>
+                        </div>
+                        <div>
+                            <div style="color: #64748b; font-size: 0.8rem;">Net Balance</div>
+                            <div class="report-summary-val" id="repNetRemaining">₱0.00</div>
+                        </div>
+                    </div>
+
+                    <h3 style="margin-bottom: 12px; color: #0f172a;">Activity Audit Logs</h3>
+                    <table class="data-table" style="margin-bottom: 30px;">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>User</th>
+                                <th>Action</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportTableBody"></tbody>
+                    </table>
+
+                    <div class="report-sign-off">
+                        <div>
+                            <p>Prepared by:</p>
+                            <br>
+                            <strong id="reportPreparedName"></strong>
+                            <p style="color: #64748b; font-size: 0.85rem;" id="reportPreparedPosition"></p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="admin-users-section" class="view-section">
+                <header class="section-header">
+                    <h2>Manage SK Official Accounts (Admin Only)</h2>
+                    <button onclick="openCreateOfficialModal()" class="btn-primary">+ Create Official Account</button>
+                </header>
+                <div class="widget-card">
+                    <table class="data-table" style="border: none; box-shadow: none;">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Position</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Contact</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminOfficialsTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="settings-section" class="view-section">
+                <header class="section-header">
+                    <h2>Account Settings & Security</h2>
+                </header>
+
+                <div class="settings-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                    <div class="widget-card">
+                        <h3 class="widget-title" style="margin-bottom: 16px;">Personal Information</h3>
+                        <form onsubmit="saveProfileInfo(event)">
+                            <label style="display: block; margin-bottom: 4px; font-size: 0.85rem; font-weight: 600; color: #475569;">First Name *</label>
+                            <input type="text" id="settingsFirstName" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; margin-bottom: 12px;" required>
+
+                            <label style="display: block; margin-bottom: 4px; font-size: 0.85rem; font-weight: 600; color: #475569;">Last Name *</label>
+                            <input type="text" id="settingsLastName" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; margin-bottom: 12px;" required>
+
+                            <label style="display: block; margin-bottom: 4px; font-size: 0.85rem; font-weight: 600; color: #475569;">Middle Name</label>
+                            <input type="text" id="settingsMiddleName" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; margin-bottom: 12px;">
+                            
+                            <label style="display: block; margin-bottom: 4px; font-size: 0.85rem; font-weight: 600; color: #475569;">Email Address *</label>
+                            <input type="email" id="settingsEmailInput" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; margin-bottom: 12px;" required>
+
+                            <label style="display: block; margin-bottom: 4px; font-size: 0.85rem; font-weight: 600; color: #475569;">Phone Number</label>
+                            <input type="text" id="settingsPhoneInput" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; margin-bottom: 12px;">
+                            
+                            <label style="display: block; margin-bottom: 4px; font-size: 0.85rem; font-weight: 600; color: #475569;">Assigned Role / Position</label>
+                            <input type="text" id="settingsRoleDisplay" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; background: #f8fafc; color: #64748b; margin-bottom: 14px;" disabled>
+                            
+                            <button type="submit" class="btn-primary" style="padding: 8px 16px; font-size: 0.85rem;">Save Changes</button>
+                        </form>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 24px;">
+                        <div class="widget-card">
+                            <h3 class="widget-title" style="margin-bottom: 16px;">Change Password</h3>
+                            <form onsubmit="handleChangePassword(event)">
+                                <label style="display: block; margin-bottom: 4px; font-size: 0.85rem; font-weight: 600; color: #475569;">Current Password</label>
+                                <input type="password" id="currentPassword" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; margin-bottom: 12px;" required>
+                                
+                                <label style="display: block; margin-bottom: 4px; font-size: 0.85rem; font-weight: 600; color: #475569;">New Password</label>
+                                <input type="password" id="newPassword" onkeyup="checkPasswordStrength(this.value)" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; margin-bottom: 8px;" required>
+
+                                <!-- Live Password Requirement Indicator -->
+                                <div id="passwordReqHint" style="font-size: 0.75rem; margin-bottom: 12px; color: #64748b; background: #f8fafc; padding: 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                                    <p id="reqLength" style="margin: 0; color: #dc2626;">❌ At least 10 characters long</p>
+                                    <p id="reqUppercase" style="margin: 2px 0 0 0; color: #dc2626;">❌ At least 1 uppercase letter (A-Z)</p>
+                                </div>
+
+                                <label style="display: block; margin-bottom: 4px; font-size: 0.85rem; font-weight: 600; color: #475569;">Confirm New Password</label>
+                                <input type="password" id="confirmNewPassword" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; margin-bottom: 14px;" required>
+                                
+                                <button type="submit" class="btn-primary" style="padding: 8px 16px; font-size: 0.85rem;">Update Password</button>
+                            </form>
+                        </div>
+
+                        <div class="widget-card admin-only" style="display: none; border: 1px solid #fecaca; background: #fff5f5;">
+                            <h3 class="widget-title" style="margin-bottom: 8px; color: #991b1b;">Danger Zone</h3>
+                            <p style="font-size: 0.80rem; color: #7f1d1d; margin-bottom: 14px;">Administrators can clear all logs and drop the financial system data.</p>
+                            <button onclick="dropAllSystemData()" class="btn-secondary" style="background: #dc2626; width: 100%; color: white;">Drop System Data</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="budgetModal" class="modal">
+        <div class="modal-content">
+            <h3>Add Budget Item</h3>
+            <form id="budgetForm" onsubmit="saveBudget(event)">
+                <label>Category:</label>
+                <input type="text" id="budgetCategory" required>
+                <label>Allocated Amount (₱):</label>
+                <input type="number" step="0.01" id="budgetAmount" required>
+                <label>Fiscal Year:</label>
+                <input type="number" id="budgetYear" value="2026" required>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeBudgetModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Budget</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="expenseModal" class="modal">
+        <div class="modal-content">
+            <h3>Submit Expense for Approval</h3>
+            <form id="expenseForm" onsubmit="handleAddExpense(event)">
+                <label>Category:</label>
+                <select id="expCategory" required style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; background: #f8fafc; margin-bottom: 12px;">
+                    <option value="">-- Select Budget Category --</option>
+                </select>
+                <label>Payee:</label>
+                <input type="text" id="expPayee" required>
+                <label>Amount (₱):</label>
+                <input type="number" step="0.01" id="expAmount" required>
+                <label>Disbursement Date:</label>
+                <input type="date" id="expDate" required>
+                <label>Description:</label>
+                <input type="text" id="expDesc">
+                
+                <label>Attach Receipt Photo (JPG/PNG):</label>
+                <input type="file" id="expReceiptFile" accept="image/jpeg,image/png,image/jpg" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; background: #f8fafc; margin-bottom: 12px;">
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeExpenseModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Submit Expense</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="receiptModal" class="modal">
+        <div class="modal-content" style="max-width: 600px; text-align: center;">
+            <h3>Attached Receipt Photo</h3>
+            <div style="margin: 15px 0; max-height: 400px; overflow-y: auto;">
+                <img id="modalReceiptImg" src="" alt="Receipt Photo" style="max-width: 100%; height: auto; border-radius: 6px; border: 1px solid #cbd5e1;">
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-primary" onclick="closeReceiptModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="createOfficialModal" class="modal">
+        <div class="modal-content">
+            <h3>Create SK Official Account</h3>
+            <form id="createOfficialForm" onsubmit="handleCreateOfficial(event)">
+                <label>Last Name *</label>
+                <input type="text" id="offLastName" required>
+                <label>First Name *</label>
+                <input type="text" id="offFirstName" required>
+                <label>Middle Name</label>
+                <input type="text" id="offMiddleName">
+                <label>Designation / Position</label>
+                <input type="text" id="offPosition" placeholder="e.g. SK Treasurer">
+                <label>Contact Number</label>
+                <input type="text" id="offContact">
+                <label>Email Address *</label>
+                <input type="email" id="offEmail" required>
+                <label>Username *</label>
+                <input type="text" id="offUsername" required>
+                <label>Password (Min 10 chars & 1 Uppercase) *</label>
+                <input type="password" id="offPassword" required>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeCreateOfficialModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Create Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRANSPENSE - Loading</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+            overflow: hidden;
+        }
+        .splash-container {
+            text-align: center;
+            animation: fadeIn 1s ease-in-out;
+        }
+        .logo-circle {
+            width: 120px;
+            height: 120px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            margin: 0 auto 20px auto;
+            animation: pulse 2s infinite ease-in-out;
+        }
+        .logo-circle img {
+            width: 90px;
+            height: 90px;
+            object-fit: contain;
+        }
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        p {
+            font-size: 0.95rem;
+            color: #94a3b8;
+        }
+        .loader-bar {
+            width: 200px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            margin: 25px auto 0 auto;
+            overflow: hidden;
+            position: relative;
+        }
+        .loader-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: #0d9488;
+            animation: loading 1.5s infinite linear;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.4); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(13, 148, 136, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(13, 148, 136, 0); }
+        }
+        @keyframes loading {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+    </style>
+    <script>
+        if (!localStorage.getItem('user')) {
+            window.location.replace('login.html');
+        } else {
+            setTimeout(() => {
+                window.location.replace('dashboard.html');
+            }, 2500);
+        }
+    </script>
+</head>
+<body>
+    <div class="splash-container">
+        <div class="logo-circle">
+            <img src="SK_logo.jpg" alt="SK Logo" onerror="this.style.display='none'; this.parentElement.innerHTML='🏛️';">
+        </div>
+        <h1>TRANSPENSE</h1>
+        <p>Loading Financial Management Portal...</p>
+        <div class="loader-bar"></div>
+    </div>
+</body>
+</html>
