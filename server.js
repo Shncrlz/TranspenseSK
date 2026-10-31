@@ -20,12 +20,12 @@ const pool = mysql.createPool({
     queueLimit: 0
 });
 
-// Konpigurasyon para sa Gmail Sender (Nodemailer)
+// Konpigurasyon para sa Gmail Sender (Nodemailer)[cite: 11]
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: 'shansantianes@gmail.com',       // <--- Ito ang Gmail account mo
-        pass: 'hsfyvexjblofpxag'               // <--- 16-digit App Password nang walang spaces
+        user: 'shansantianes@gmail.com',
+        pass: 'hsfyvexjblofpxag'
     }
 });
 
@@ -76,7 +76,7 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// BACKEND API PARA SA PAGPAPALIT NG PASSWORD
+// BACKEND API PARA SA PAGPAPALIT NG PASSWORD[cite: 11]
 app.post('/api/change-password', async (req, res) => {
     const { user_id, current_password, new_password } = req.body;
 
@@ -123,7 +123,7 @@ app.post('/api/change-password', async (req, res) => {
     }
 });
 
-// BACKEND API PARA SA PAG-UPDATE NG PERSONAL INFORMATION
+// BACKEND API PARA SA PAG-UPDATE NG PERSONAL INFORMATION[cite: 11]
 app.post('/api/user/update-profile', async (req, res) => {
     const { user_id, first_name, last_name, middle_name, email, contact_number } = req.body;
 
@@ -198,10 +198,9 @@ app.get('/api/admin/officials', async (req, res) => {
     }
 });
 
-// FORGOT PASSWORD: DUAL SYSTEM (Gmail + Clean Terminal Fallback)
+// FORGOT PASSWORD[cite: 11]
 app.post('/api/request-reset-code', async (req, res) => {
     const { email } = req.body;
-    console.log('\nMay nag-request ng reset code para sa email:', email);
 
     if (!email) {
         return res.status(400).json({ success: false, message: 'Please enter your registered email.' });
@@ -210,7 +209,6 @@ app.post('/api/request-reset-code', async (req, res) => {
     try {
         const [rows] = await pool.query('SELECT user_id, first_name FROM users WHERE email = ?', [email.trim()]);
         if (rows.length === 0) {
-            console.log('Walang nakitang account sa database para sa email na ito.');
             return res.status(400).json({ success: false, message: 'No account found with this email address.' });
         }
 
@@ -222,11 +220,6 @@ app.post('/api/request-reset-code', async (req, res) => {
             'UPDATE users SET reset_code = ?, reset_code_expires = ? WHERE email = ?',
             [verificationCode, expiresAt, email.trim()]
         );
-
-        console.log(`========================================`);
-        console.log(`VERIFICATION CODE para kay ${email.trim()}:`);
-        console.log(`CODE: ${verificationCode}`);
-        console.log(`========================================\n`);
 
         const mailOptions = {
             from: '"Transpense SK Financial System" <shansantianes@gmail.com>',
@@ -249,14 +242,11 @@ app.post('/api/request-reset-code', async (req, res) => {
             if (error) {
                 console.log('Error sa pag-send ng email:', error.message);
             } else {
-                console.log('Tagumpay na naipadala ang email sa Gmail! Response:', info.response);
+                console.log('Tagumpay na naipadala ang email sa Gmail!');
             }
         });
 
-        res.json({
-            success: true,
-            message: 'Successfully sent in email'
-        });
+        res.json({ success: true, message: 'Successfully sent in email' });
 
     } catch (err) {
         console.error('Request Code Error:', err);
@@ -304,24 +294,13 @@ app.post('/api/reset-password-with-code', async (req, res) => {
     }
 });
 
-const PORT = 3000;
-// 👉 Naka-set na sa transparency.html para ito ang unang bumungad sa mga residente
+const PORT = process.env.PORT || 3000;
 const URL = `http://localhost:${PORT}/transparency.html`;
 
 app.listen(PORT, () => {
     console.log(`\n========================================`);
-    console.log(`TRANSPENSE Backend running on ${URL}`);
+    console.log(`TRANSPENSE Backend running on port ${PORT}`);
     console.log(`========================================\n`);
-
-    const startCmd = process.platform === 'win32' ? `start ${URL}` :
-                     process.platform === 'darwin' ? `open ${URL}` :
-                     `xdg-open ${URL}`;
-
-    exec(startCmd, (err) => {
-        if (err) {
-            console.error('Could not auto-launch browser:', err);
-        }
-    });
 });
 
 async function logAudit(userId, userName, action, details) {
@@ -480,38 +459,5 @@ app.get('/api/audit/report', async (req, res) => {
         });
     } catch (err) {
         res.status(500).json({ success: false, message: 'Failed to generate audit report.' });
-    }
-});
-
-app.delete('/api/admin/drop-all', async (req, res) => {
-    const userRole = req.headers['x-user-role'];
-
-    if (userRole !== 'Admin') {
-        return res.status(403).json({ 
-            success: false, 
-            message: 'Access denied. Only Administrators can perform this action.' 
-        });
-    }
-
-    try {
-        await pool.query('DELETE FROM expenses');
-        await pool.query('DELETE FROM budget');
-        await pool.query('DELETE FROM audit_logs');
-
-        await pool.query(
-            'INSERT INTO audit_logs (user_name, action, details) VALUES (?, ?, ?)',
-            ['System Admin', 'SYSTEM_RESET', 'All budgets, expenses, and activity logs were cleared via Drop All.']
-        );
-
-        return res.json({ 
-            success: true, 
-            message: 'All system finances and logs successfully dropped.' 
-        });
-    } catch (err) {
-        console.error('Drop all error:', err);
-        return res.status(500).json({ 
-            success: false, 
-            message: 'Failed to purge database records.' 
-        });
     }
 });

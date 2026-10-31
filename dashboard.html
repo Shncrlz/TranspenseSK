@@ -345,7 +345,6 @@
                                 <label style="display: block; margin-bottom: 4px; font-size: 0.85rem; font-weight: 600; color: #475569;">New Password</label>
                                 <input type="password" id="newPassword" onkeyup="checkPasswordStrength(this.value)" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; margin-bottom: 8px;" required>
 
-                                <!-- Live Password Requirement Indicator -->
                                 <div id="passwordReqHint" style="font-size: 0.75rem; margin-bottom: 12px; color: #64748b; background: #f8fafc; padding: 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
                                     <p id="reqLength" style="margin: 0; color: #dc2626;">❌ At least 10 characters long</p>
                                     <p id="reqUppercase" style="margin: 2px 0 0 0; color: #dc2626;">❌ At least 1 uppercase letter (A-Z)</p>
@@ -356,12 +355,6 @@
                                 
                                 <button type="submit" class="btn-primary" style="padding: 8px 16px; font-size: 0.85rem;">Update Password</button>
                             </form>
-                        </div>
-
-                        <div class="widget-card admin-only" style="display: none; border: 1px solid #fecaca; background: #fff5f5;">
-                            <h3 class="widget-title" style="margin-bottom: 8px; color: #991b1b;">Danger Zone</h3>
-                            <p style="font-size: 0.80rem; color: #7f1d1d; margin-bottom: 14px;">Administrators can clear all logs and drop the financial system data.</p>
-                            <button onclick="dropAllSystemData()" class="btn-secondary" style="background: #dc2626; width: 100%; color: white;">Drop System Data</button>
                         </div>
                     </div>
                 </div>

@@ -88,41 +88,6 @@ function applyRoleAccessControl() {
     }
 }
 
-async function dropAllSystemData() {
-    if (currentUser.role !== 'Admin') {
-        alert('Error: Access denied. Only Administrators can perform this action.');
-        return;
-    }
-
-    const confirmation = prompt('DANGER: Type "DROP ALL" to permanently clear all budgets, expenses, and system activity logs.');
-    
-    if (confirmation !== 'DROP ALL') {
-        alert('Action canceled. Confirmation text did not match.');
-        return;
-    }
-
-    try {
-        const res = await fetch('/api/admin/drop-all', {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-User-Role': currentUser.role
-            }
-        });
-
-        const data = await res.json();
-        if (data.success) {
-            alert('System reset successful: All financial records and activity logs have been dropped.');
-            loadDashboardData();
-        } else {
-            alert(`Error: ${data.message}`);
-        }
-    } catch (err) {
-        console.error('Failed to drop system data:', err);
-        alert('Server error occurred while dropping data.');
-    }
-}
-
 async function saveProfileInfo(e) {
     e.preventDefault();
     
